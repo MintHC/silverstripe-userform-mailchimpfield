@@ -17,7 +17,7 @@
 		"silverstripe/userforms": "^5",
 		"drewm/mailchimp-api": "^2.5",
 		"symbiote/silverstripe-gridfieldextensions": "^3",
-		"composer/installers": "*",
+		"composer/installers": "*"
 	},
     "extra": {
         "expose": [
