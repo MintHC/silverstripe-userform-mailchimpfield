@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Creates an editable field that allows users to choose a list
  * From MailChimp and choose default fields
@@ -18,14 +19,6 @@ use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\LiteralField;
 use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
-use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
-use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
-use Symbiote\GridFieldExtensions\GridFieldTitleHeader;
-use SilverStripe\Forms\GridField\GridField;
-use SilverStripe\Forms\GridField\GridFieldButtonRow;
-use SilverStripe\Forms\GridField\GridFieldConfig;
-use SilverStripe\Forms\GridField\GridFieldDeleteAction;
-use SilverStripe\Forms\GridField\GridFieldToolbarHeader;
 use DrewM\MailChimp\MailChimp;
 
 class EditableMailChimpField extends EditableFormField
@@ -73,36 +66,38 @@ class EditableMailChimpField extends EditableFormField
         $FieldTypeValues = ($this->owner::get()->dbObject('FieldType')->enumValues());
 
         $fields->addFieldsToTab(
-            "Root.Main", array(
-            LiteralField::create("MailChimpStart", "<h4>MailChimp Configuration</h4>")->setAttribute("disabled", $fieldsStatus),
-            DropdownField::create("ListID", 'Subscripers List', $this->getLists()->map("ListID", "Name"))
-                ->setEmptyString("Choose a MailChimp List")
-                ->setAttribute("disabled", $fieldsStatus),
-            DropdownField::create("EmailField", 'Email Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
-            DropdownField::create("FirstNameField", 'First Name Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
-            DropdownField::create("LastNameField", 'Last Name Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
-            LiteralField::create("MailChimpEnd", "<h4>Other Configuration</h4>"),
-            DropdownField::create("FieldType", 'Field Type', $FieldTypeValues),
-            CheckboxField::create("UpdateContact", 'Update Contact')
-                ->setDescription('Updates the contact if it already exists in the selected MailChimp list'),
-            ), 'Type'
+            "Root.Main",
+            array(
+                LiteralField::create("MailChimpStart", "<h4>MailChimp Configuration</h4>")->setAttribute("disabled", $fieldsStatus),
+                DropdownField::create("ListID", 'Subscripers List', $this->getLists()->map("ListID", "Name"))
+                    ->setEmptyString("Choose a MailChimp List")
+                    ->setAttribute("disabled", $fieldsStatus),
+                DropdownField::create("EmailField", 'Email Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
+                DropdownField::create("FirstNameField", 'First Name Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
+                DropdownField::create("LastNameField", 'Last Name Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
+                LiteralField::create("MailChimpEnd", "<h4>Other Configuration</h4>"),
+                DropdownField::create("FieldType", 'Field Type', $FieldTypeValues),
+                CheckboxField::create("UpdateContact", 'Update Contact')
+                    ->setDescription('Updates the contact if it already exists in the selected MailChimp list'),
+            ),
+            'Type'
         );
 
         $editableColumns = new GridFieldEditableColumns();
         $editableColumns->setDisplayFields(
             array(
-            'Title' => array(
-                'title' => 'Title',
-                'callback' => function ($record, $column, $grid) {
-                    return TextField::create($column);
-                }
-            ),
-            'Default' => array(
-                'title' => _t('EditableMultipleOptionField.DEFAULT', 'Selected by default?'),
-                'callback' => function ($record, $column, $grid) {
-                    return CheckboxField::create($column);
-                }
-            )
+                'Title' => array(
+                    'title' => 'Title',
+                    'callback' => function ($record, $column, $grid) {
+                        return TextField::create($column);
+                    }
+                ),
+                'Default' => array(
+                    'title' => _t('EditableMultipleOptionField.DEFAULT', 'Selected by default?'),
+                    'callback' => function ($record, $column, $grid) {
+                        return CheckboxField::create($column);
+                    }
+                )
             )
         );
 
@@ -116,9 +111,9 @@ class EditableMailChimpField extends EditableFormField
     {
         // ensure format and data is correct based on type
         if ($this->FieldType == 'HiddenField') {
-            $field = HiddenField::create($this->Name, $this->EscapedTitle, 1);
+            $field = HiddenField::create($this->Name, $this->Title, 1);
         } else {
-            $field = CheckboxField::create($this->Name, $this->EscapedTitle);
+            $field = CheckboxField::create($this->Name, $this->Title);
         }
 
         $this->doUpdateFormField($field);
@@ -150,10 +145,11 @@ class EditableMailChimpField extends EditableFormField
             }
 
             $result = $MailChimp->post(
-                "lists/$list_id/members", [
-                'email_address' => $emailaddress,
-                'status'        => 'subscribed',
-                'merge_fields' => $mergefields,
+                "lists/$list_id/members",
+                [
+                    'email_address' => $emailaddress,
+                    'status'        => 'subscribed',
+                    'merge_fields' => $mergefields,
                 ]
             );
 
@@ -161,8 +157,9 @@ class EditableMailChimpField extends EditableFormField
                 $subscriber_hash = MailChimp::subscriberHash($emailaddress);
 
                 $result = $MailChimp->patch(
-                    "lists/$list_id/members/$subscriber_hash", [
-                    'merge_fields' => $mergefields,
+                    "lists/$list_id/members/$subscriber_hash",
+                    [
+                        'merge_fields' => $mergefields,
                     ]
                 );
             }

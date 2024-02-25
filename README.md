@@ -10,7 +10,7 @@ composer require swordfox/silverstripe-userform-mailchimpfield
 ##### Configuration
 To connect to your MailChimp field you will need to set two fields in your config.yml.
 ```
-EditableMailChimpField:
+Swordfox\UserForms\EditableMailChimpField:
   api_key: 'API KEY GOES HERE'
 ```
 ^ These setting can be found in client settings area in MailChimp.
