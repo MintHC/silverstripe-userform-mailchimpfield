@@ -1,6 +1,7 @@
 #MailChimp UserForm Field
-Adds a custom field to UserForms which allows you to select a
-list from MailChimp and subscribe on submission.
+Adds a custom field to UserForms which allows you to select a list from MailChimp and subscribe on submission.
+
+Also allows additional merge_fields to be added for each field in the form.
 
 ### Installation
 Via composer

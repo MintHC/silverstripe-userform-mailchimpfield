@@ -15,11 +15,23 @@ use SilverStripe\View\ArrayData;
 use SilverStripe\ORM\ArrayList;
 use SilverStripe\Forms\HiddenField;
 use SilverStripe\Forms\DropdownField;
+use SilverStripe\Forms\Tab;
 use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\LiteralField;
 use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
+use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
+use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
+use Symbiote\GridFieldExtensions\GridFieldTitleHeader;
 use DrewM\MailChimp\MailChimp;
+
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Forms\GridField\GridFieldButtonRow;
+use SilverStripe\Forms\GridField\GridFieldConfig;
+use SilverStripe\Forms\GridField\GridFieldDeleteAction;
+use SilverStripe\Forms\GridField\GridFieldToolbarHeader;
+
+use Swordfox\UserForms\EditableMergeField;
 
 class EditableMailChimpField extends EditableFormField
 {
@@ -38,21 +50,81 @@ class EditableMailChimpField extends EditableFormField
     /**
      * @var array Fields on the user defined form page.
      */
-    private static $db = array(
+    private static $db = [
         'FieldType' => 'Enum(array("CheckboxField","HiddenField"),"CheckboxField")',
         'ListID' => 'Varchar(255)',
         'EmailField' => 'Varchar(255)',
         'FirstNameField' => 'Varchar(255)',
         'LastNameField' => 'Varchar(255)',
         'UpdateContact' => 'Boolean'
-    );
+    ];
 
-    /**
-     * @return FieldList
-     */
+    private static $has_many = [
+        'MergeFields' => EditableMergeField::class,
+    ];
+
+    private static $owns = [
+        'MergeFields',
+    ];
+
+    private static $cascade_deletes = [
+        'MergeFields',
+    ];
+
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
+
+
+        $editableColumns = new GridFieldEditableColumns();
+        $editableColumns->setDisplayFields([
+            'FieldID' => [
+                'title' => 'Field',
+                'callback' => function ($record, $column, $grid) {
+                    return DropdownField::create($column, $column, $this->Parent()->Fields()->excludeAny(
+                        [
+                            'Title' => null,
+                            'ID' => $this->ID,
+                            'ClassName' => [
+                                'SilverStripe\UserForms\Model\EditableFormField\EditableFormStep',
+                                'SilverStripe\UserForms\Model\EditableFormField\EditableCheckboxGroupField',
+                                'SilverStripe\UserForms\Model\EditableFormField\EditableRadioField',
+                                'SilverStripe\UserForms\Model\EditableFormField\EditableFieldGroup',
+                                'SilverStripe\UserForms\Model\EditableFormField\EditableFieldGroupEnd'
+                            ],
+                        ]
+                    )->map('ID', 'Title'));
+                }
+            ],
+            'Value' => [
+                'title' => 'Merge Field (e.g. FNAME, LNAME, ADDRESS or PHONE etc.)',
+                'callback' => function ($record, $column, $grid) {
+                    return TextField::create($column);
+                }
+            ]
+        ]);
+
+        $MergeFieldsConfig = GridFieldConfig::create()
+            ->addComponents(
+                new GridFieldToolbarHeader(),
+                new GridFieldTitleHeader(),
+                new GridFieldOrderableRows('Sort'),
+                $editableColumns,
+                new GridFieldButtonRow(),
+                new GridFieldAddNewInlineButton(),
+                new GridFieldDeleteAction()
+            );
+
+        $MergeFieldsGrid = GridField::create(
+            'MergeFields',
+            'Merge Fields',
+            $this->MergeFields(),
+            $MergeFieldsConfig
+        );
+
+        $fields->insertAfter('Main', Tab::create('MergeFields', 'Merge Fields'));
+        $fields->addFieldToTab('Root.MergeFields', $MergeFieldsGrid);
+
 
         // get current user form fields
         $currentFromFields = $this->Parent()->Fields()->map('Name', 'Title')->toArray();
@@ -142,6 +214,12 @@ class EditableMailChimpField extends EditableFormField
             }
             if ($this->owner->getField('LastNameField')) {
                 $mergefields['LNAME'] = $data[$this->owner->getField('LastNameField')];
+            }
+
+            foreach ($this->MergeFields() as $MergeField) {
+                if (isset($data[$MergeField->Field()->Name])) {
+                    $mergefields[$MergeField->Value] = $data[$MergeField->Field()->Name];
+                }
             }
 
             $result = $MailChimp->post(
