@@ -54,7 +54,7 @@ class EditableMergeField extends DataObject
     public function getValue()
     {
         $value = $this->getField('Value');
-        if (empty($value)) {
+        if (empty($value) and !empty($this->Field()->Title)) {
             return strtoupper(str_replace(' ', '', $this->Field()->Title));
         }
         return $value;
