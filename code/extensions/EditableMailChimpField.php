@@ -145,7 +145,7 @@ class EditableMailChimpField extends EditableFormField
                 DropdownField::create("ListID", 'Subscripers List', $this->getLists()->map("ListID", "Name"))
                     ->setEmptyString("Choose a MailChimp List")
                     ->setAttribute("disabled", $fieldsStatus),
-                TextField::create("TagsToAssign", 'Tags To Assign', $currentFromFields)
+                TextField::create("TagsToAssign", 'Tags To Assign')
                     ->setDescription('Separete each tag with a comma')
                     ->setAttribute("disabled", $fieldsStatus),    
                 DropdownField::create("EmailField", 'Email Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
