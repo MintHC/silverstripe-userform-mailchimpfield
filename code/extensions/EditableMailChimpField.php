@@ -53,6 +53,7 @@ class EditableMailChimpField extends EditableFormField
     private static $db = [
         'FieldType' => 'Enum(array("CheckboxField","HiddenField"),"CheckboxField")',
         'ListID' => 'Varchar(255)',
+        'TagsToAssign' => 'Varchar(255)',
         'EmailField' => 'Varchar(255)',
         'FirstNameField' => 'Varchar(255)',
         'LastNameField' => 'Varchar(255)',
@@ -144,6 +145,9 @@ class EditableMailChimpField extends EditableFormField
                 DropdownField::create("ListID", 'Subscripers List', $this->getLists()->map("ListID", "Name"))
                     ->setEmptyString("Choose a MailChimp List")
                     ->setAttribute("disabled", $fieldsStatus),
+                TextField::create("TagsToAssign", 'Tags To Assign', $currentFromFields)
+                    ->setDescription('Separete each tag with a comma')
+                    ->setAttribute("disabled", $fieldsStatus),    
                 DropdownField::create("EmailField", 'Email Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
                 DropdownField::create("FirstNameField", 'First Name Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
                 DropdownField::create("LastNameField", 'Last Name Field', $currentFromFields)->setAttribute("disabled", $fieldsStatus),
@@ -206,6 +210,12 @@ class EditableMailChimpField extends EditableFormField
 
             $list_id = $this->owner->getField('ListID');
 
+            $tags = null;
+
+            if ($this->owner->getField('TagsToAssign') != '') {
+                $tags = preg_split('/\s*,\s*/', $this->owner->getField('TagsToAssign'), -1, PREG_SPLIT_NO_EMPTY);
+            }
+
             $emailaddress = $data[$this->owner->getField('EmailField')];
 
             $mergefields = [];
@@ -222,23 +232,36 @@ class EditableMailChimpField extends EditableFormField
                 }
             }
 
+            $data = [
+                'email_address' => $emailaddress,
+                'status'        => 'subscribed',
+                'tags'          => null,
+                'merge_fields' => $mergefields,
+            ];
+
+            if ($tags) {
+                $data['tags'] = $tags;
+            }
+
             $result = $MailChimp->post(
                 "lists/$list_id/members",
-                [
-                    'email_address' => $emailaddress,
-                    'status'        => 'subscribed',
-                    'merge_fields' => $mergefields,
-                ]
+                $data
             );
-
+            
             if ($this->owner->getField('UpdateContact') and array_key_exists('status', $result) and $result['status'] == 400) {
                 $subscriber_hash = MailChimp::subscriberHash($emailaddress);
+                
+                $data = [
+                    'merge_fields' => $mergefields,
+                ];
+    
+                if ($tags) {
+                    $data['tags'] = $tags;
+                }
 
                 $result = $MailChimp->patch(
                     "lists/$list_id/members/$subscriber_hash",
-                    [
-                        'merge_fields' => $mergefields,
-                    ]
+                    $data
                 );
             }
 

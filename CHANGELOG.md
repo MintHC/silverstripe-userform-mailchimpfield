@@ -1,3 +1,6 @@
+# Version 2.2.0
+Support for tags
+
 # Version 2.1.0
 Support for merge_fields (https://mailchimp.com/developer/marketing/docs/merge-fields/)
 
