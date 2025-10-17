@@ -189,7 +189,7 @@ class EditableMailChimpField extends EditableFormField
         if ($this->FieldType == 'HiddenField') {
             $field = HiddenField::create($this->Name, $this->Title, 1);
         } else {
-            $field = CheckboxField::create($this->Name, $this->Title);
+            $field = CheckboxField::create($this->Name, $this->Title, $this->Default == 1 ? 1 : 0);
         }
 
         $this->doUpdateFormField($field);
